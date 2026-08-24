@@ -1,7 +1,8 @@
 import asyncio
 import os
 import sqlite3
-
+import threading
+from http.server import BaseHTTPRequestHandler, HTTPServer
 from aiogram import Bot, Dispatcher, F
 from aiogram.filters import CommandStart
 from aiogram.fsm.context import FSMContext
@@ -530,9 +531,26 @@ async def confirm(
 # =========================
 # BOTNI ISHGA TUSHIRISH
 # =========================
+class HealthHandler(BaseHTTPRequestHandler):
+    def do_GET(self):
+        self.send_response(200)
+        self.end_headers()
+        self.wfile.write(b"Bot ishlayapti!")
+
+    def log_message(self, format, *args):
+        pass
+
+
+def run_web_server():
+    port = int(os.getenv("PORT", "10000"))
+    server = HTTPServer(("0.0.0.0", port), HealthHandler)
+    server.serve_forever()
+
 
 async def main():
     print("🤖 Talabalar yotoqxonasi boti ishga tushdi!")
+
+    threading.Thread(target=run_web_server, daemon=True).start()
 
     await dp.start_polling(bot)
 
